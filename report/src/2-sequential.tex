@@ -1,0 +1,37 @@
+\chapter{Sequential}
+\label{cap:sequential}
+In this chapter we present the main aspect of the sequential implementation to count the 3-grams in an input.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Pipeline}
+We suppose that we have already did the normalizzation of the input. The pipeline is the above:
+\begin{itemize}
+    \item We iterate throught the input and consider the current 3-gram.
+    \item We calculate the hash value of this 3-gram.
+    \item We scrool throught the whole list related to the index calculate in the previous step:
+    \begin{itemize}
+        \item If current 3-gram match one already found, we increase the related counter.
+        \item Althought we insert as new node in the chain and initialize the counter to one.
+    \end{itemize}
+    \item We pass to the next 3-gram.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Hash table}
+In Section~\ref{sec:hash_table} we have defined our approch to the hash function. Now we must implent teh hash table with its functionalities.
+
+\myskip
+
+Let's start from the key value of the function, $p$ and $M$. In general there is a rule of thumb that says to pick both values as prime numbers with M as large as possible. Starting from this:
+\begin{itemize}
+    \item $p\_char$: Must be grether than the dimension of the alphabet. Thanks to normalizzation, described in Section~\ref{sec:normalizzation}, our dictionary dimention is circa 26 (plus the space); so we took $p\_char=37$.
+    \item $p\_grams$: Must be grether or equal to $p\_char$ to reduce the number of collisions. We took $p\_grams=101$.
+    \item $M\_char$: We took $M\_char=16777259$, i.e. the first prime number after $2^{24}$.
+    \item $M\_grams$: We took $M\_gram=150001$, i.e. the first prime number after $150000=1.5\cdot expected\_unic\_trigram$, if we suppose that the unic 3-grams are 150K.
+\end{itemize}
+
+\myskip
+
+Thanks to these choice and the calculation tric fot the hash function, defined in Section~\ref{sec:normalizzation}, we are sure that we haven't overflow error if we store the intermediate result in 32 bits.
+
+In fact, suppose that $H_i$ can store in 32 bits we can prove that the intermediate variable used can be store in 32 bits: in the worst case we have that $intermediate\_var=M\_char\cdot p\_char+c_{max}\approx6.2\cdot10^8<2^{32}$. The same evaluating can be do for the $p_grams$ value.

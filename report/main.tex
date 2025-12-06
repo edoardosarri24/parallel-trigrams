@@ -1,0 +1,20 @@
+\documentclass[12pt, a4paper, oneside, openright, footsepline]{scrreprt}
+\input{src/preambolo.tex}
+\begin{document}
+\input{src/copertina}
+
+%%%%%%%%%%%%%%%%%%%%%%%INDICE%%%%%%%%%%%%%%%%%%%%%%
+\tableofcontents
+\listoffigures
+\lstlistoflistings
+
+%%%%%%%%%%%%%%%%%%%%%CAPITOLI%%%%%%%%%%%%%%%%%%%%%%
+\input{src/1-introduction.tex}
+\input{src/2-sequential.tex}
+\input{src/3-parallel.tex}
+\input{src/4-analysis.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%FINE%%%%%%%%%%%%%%%%%%%%%%%%
+\nocite{*}
+\printbibliography
+\end{document}
