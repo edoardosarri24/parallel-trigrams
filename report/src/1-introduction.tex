@@ -28,7 +28,7 @@ We have to be able to count the trigrams; to address efficiently this goal we wi
 \label{sec:hash_function}
 In a hash table we must define the hash function to calculate the table index of the elements. We have to calculate the index of strings, so we adopt the \textbf{Polynomial Rolling Hash}~\cite{polinomial_strings_hashing}: given the string $c_1\cdots c_n$, its hash value is defined by $$\displaystyle H(c_1\cdots c_n)=\sum_{i=1}^n(c_i\cdot p^{i-1})mod M.$$
 
-This approch to obtain the hash value is inefficient and dangerous for the overflow. We can exploit the distributive property of the module operation: given $H(c_1\cdots c_i)$, we have that $H(c_1\cdots c_ic_{i+1})=(H(c_1\cdots c_i)\cdot p+c_{i+1})mod M$. This garantee, with the correct choice of $p$ and $M$ like the one below, the overflow absence of overflow.
+This approch to obtain the hash value is inefficient and dangerous for the overflow. We can exploit the distributive property of the module operation: given $H(c_1\cdots c_i)$, we have that $H(c_1\cdots c_ic_{i+1})=(H(c_1\cdots c_i)\cdot p+c_{i+1})mod M$. This garantee, with the correct choice of $p$ and $M$ like the one below, the absence of overflow.
 
 \myskip
 

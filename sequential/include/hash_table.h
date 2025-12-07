@@ -3,17 +3,10 @@
 
 #include <stdlib.h>
 
-typedef struct Node {
-    char *gram;
-    int counter;
-    struct Node *next;
-} Node;
-
-typedef struct {
-    Node **buckets;
-    size_t buckets_size; // number of index
-} HashTable;
+typedef struct HashTable HashTable;
 
 HashTable *create_hash_table(size_t buckets_size);
+void add_gram(HashTable *table, const char *gram);
+void free_hash_table(HashTable *table);
 
 #endif // HASH_TABLE_H

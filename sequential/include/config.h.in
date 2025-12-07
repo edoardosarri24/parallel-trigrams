@@ -1,0 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define N_GRAM_SIZE @N_GRAM_SIZE@ // Size of the n-grams to process (configured via CMake)
+
+#endif // CONFIG_H
