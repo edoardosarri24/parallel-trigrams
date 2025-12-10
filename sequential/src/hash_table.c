@@ -2,12 +2,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include "hash_table.h"
-#include "config.h"
 
-#define P_CHAR 37
-#define M_CHAR 16777259
-#define P_GRAM 101
+#define P 101
 
 typedef struct Node {
     char *gram;
@@ -17,10 +15,10 @@ typedef struct Node {
 
 struct HashTable {
     Node **buckets;
-    size_t buckets_size; // number of index
+    int buckets_size; // number of index
 };
 
-HashTable *create_hash_table(size_t buckets_size) {
+HashTable *create_hash_table(int buckets_size) {
     HashTable *table = (HashTable *)malloc(sizeof(HashTable));
     if (!table) {
         perror("memory allocation failed");
@@ -36,29 +34,12 @@ HashTable *create_hash_table(size_t buckets_size) {
     return table;
 }
 
-static uint_fast32_t hash_word(const char *str, const size_t len) {
+static uint_fast32_t hash_function(const char *gram, const int buckets_size) {
     uint_fast32_t hash_value = 0;
-    for (size_t i = 0; i < len; i++) {
-        hash_value = (hash_value * P_CHAR + (unsigned char)str[i]) % M_CHAR;
-    }
-    return hash_value;
-}
-
-static uint_fast32_t hash_function(const char *gram, size_t buckets_size) {
-    uint_fast32_t hash_value = 0;
-    const char *ptr = gram;
-    // compute the hash_value for n-gram
-    for (int i=0; i < N_GRAM_SIZE; i++) {
-        const char *word_start = ptr;
-        size_t len = 0;
-        while (*ptr && *ptr != ' ') {
-            ptr++;
-            len++;
-        }
-        // compute the single word hash-value
-        uint_fast32_t hash_value_word = hash_word(word_start, len);
-        hash_value = (hash_value * P_GRAM + hash_value_word) % buckets_size;
-        if (*ptr == ' ') ptr++;
+    while (*gram) {
+        unsigned char c = (unsigned char)*gram;
+        hash_value = (hash_value * P + c) % buckets_size; // thanks to the distributive property of the module operation
+        gram++;
     }
     return hash_value;
 }
@@ -92,9 +73,9 @@ void add_gram(HashTable *table, const char *gram) {
 }
 
 void free_hash_table(HashTable *table) {
-    if (table == NULL) return;
+    if (!table) return;
 
-    for (size_t i=0; i < table->buckets_size; i++) {
+    for (int i=0; i < table->buckets_size; i++) {
         Node *current_node = table->buckets[i];
         while (current_node != NULL) {
             // the next node will be free in the next iteration

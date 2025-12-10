@@ -1,12 +1,12 @@
 \chapter{Introduction}
-The main goal of this project is to count the trigrams (the occurencies of three consecutive word) present in an input file. This will be addressed with two approaches: with the sequential implementation in Chapter~\ref{cap:sequential} and with the parallel implementation in Chapter~\ref{cap:parallel}. After these tow implementations we will evaluate the performance in Chapter~\ref{cap:analysis}, with particular focus on the speed-up.
+The main goal of this project is to count the $n$-gram (the occurencies of $n$ consecutive word) present in an input file. This will be addressed with two approaches: with the sequential implementation in Chapter~\ref{cap:sequential} and with the parallel implementation in Chapter~\ref{cap:parallel}. After these tow implementations we will evaluate the performance in Chapter~\ref{cap:analysis}, with particular focus on the speed-up.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pre-processing}
 The pipeline that we followed for the input pre-processing consists in collect the input file and normalizating it.
 
 \subsection{Input collection}
-TODO
+We have to collect some text to analyze. In our experiment we use \textit{.txt} file.
 
 \subsection{Normalization}
 \label{sec:normalizzation}
@@ -16,7 +16,7 @@ We addressed this in these ways:
 \begin{itemize}
     \item Bring all characters in lower case form.
     \item Remove all the punctuation like periods, commas and exclamation points.
-    \item We mantain only one type of separatore between the words, i.e. single space.
+    \item We mantain only one type of separatore between the words, i.e. single space. This help us when we have to bound a word.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,14 +30,10 @@ In a hash table we must define the hash function to calculate the table index of
 
 This approch to obtain the hash value is inefficient and dangerous for the overflow. We can exploit the distributive property of the module operation: given $H(c_1\cdots c_i)$, we have that $H(c_1\cdots c_ic_{i+1})=(H(c_1\cdots c_i)\cdot p+c_{i+1})mod M$. This garantee, with the correct choice of $p$ and $M$ like the one below, the absence of overflow.
 
-\myskip
-
-This algorithm can be directly use for the hash value of a word, but it is useful also for calculate the hash value of our 3-gram: for a single string we can define $c_i$ like the ASCII code of the i-th character; for the 3-gram we can define $c_i$ like the hash value of the i-th word. With this consideration we must define four value: $p\_char$, $p\_grams$, $M\_char$ and $M\_grams$.
-
 \subsection{Hash table characteristics}
 Considering what was said above, the hash table has these characteristics:
 \begin{itemize}
-    \item The dimension of the index vector is of $M\_grams$ position.
+    \item The dimension of the index vector corresponde to the $M$ value.
     \item We resolve the collisions with the open chain method: every position in the table is a pointer to the data that share the same hash value.
-    \item Each node of the open chain is composed by the string (i.e., the 3-gram) as key and the counter as value.
+    \item Each node of the open chain is composed by the string (i.e., the $n$-gram) as key and the counter as value.
 \end{itemize}
