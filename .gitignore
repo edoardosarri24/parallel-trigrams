@@ -2,4 +2,4 @@ report/build/
 .vscode/
 build/
 sequential/data/input.txt
-sequential/data/normalized_text.txt
+sequential/data/normalized_input.txt

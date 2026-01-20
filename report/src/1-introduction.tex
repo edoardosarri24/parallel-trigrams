@@ -1,6 +1,8 @@
 \chapter{Introduction}
 The main goal of this project is to count the $n$-gram (the occurencies of $n$ consecutive word) present in an input file. This will be addressed with two approaches: with the sequential implementation in Chapter~\ref{cap:sequential} and with the parallel implementation in Chapter~\ref{cap:parallel}. After these tow implementations we will evaluate the performance in Chapter~\ref{cap:analysis}, with particular focus on the speed-up.
 
+The input file of our analysis was taken from \href{https://wortschatz.uni-leipzig.de/en/download/eng}{Wortschatz Leipzig project}.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Features}
 Obviously the main goal is two count the $n$-gram. Others features are:
@@ -51,7 +53,7 @@ Considering what was said above, the hash table has these characteristics:
 For the $M$ and $p$ value in generale there is a rule of thumb that says to pick both values as prime numbers with M as large as possible. Starting from this:
 \begin{itemize}
     \item $p$: Must be grether than the dimension of the alphabet to reduce the probability of collisions. In the computing we analyse the corpus byte-by-byte, so if the $p$ value is larger thant 256 it will be fine. We took $p=257$, the first prime number after 256.
-    \item $M$: The choice of $M$ determ the load factor of the hash table, that can be defined as $\alpha=\tfrac{number\_of\_stored\_element}{table\_dimension}$. We can compute in the way that of can obtain $\alpha=\tfrac{expected\_unic\_n-gram}{1.5\times expected\_unic\_n-gram}\approx0.67<1$, that usually is a good load factor. To determine the $expected\_unic\_n-gram$ the best option is use an empiracal estimate sampling from the corpus like $unic\_sampling\_n-gram\times\tfrac{total\_words}{salpled\_word}$. For our goal this isn't a foundamntal factor, so we took simply the prime number after 150K, i.e. $M=150K$.
+    \item $M$: The choice of $M$ determ the fill factor of the hash table, that can be defined as $\alpha=\tfrac{busy\_buckets}{table\_dimension}$. We compute it empirically as $M=10000019$; this choice allow us to have a good fill factor (i.e., 0.75 circa) in order to have a good compromise between memory usage and speed.
 \end{itemize}
 
 \subsection{Overflow}
@@ -77,7 +79,37 @@ We have considered the below statistics:
         We considered the follow statistic to evaluate the hash table performance:
         \begin{itemize}
             \item The mean and the max length of the list.
-            \item Load factor, i.e. the ratio between the total elements and the total buckets.
+            \item Load factor, i.e. the ratio between the total elements and the total buckets. This corresponde with the average langht of chain.
             \item Fill factor, i.e. the ratio between the busy bucket and the total bucket.
         \end{itemize}
 \end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Tools}
+To validate and test our software we use two main tools: the sanitizers and the profiler.
+
+\subsection{Sanitizers}
+A sanitizer is a dynamic code analyzer integreted in the compiler that allow us to discover runtime errors in out code. The tool instruments the code to store metadata for each variable and this allow to detect runtime errors that the compiler can't see because it works in a static way.
+
+The sanitezer is usefull during the developmet phase. In the release version we compile with the sanitizer because it introduce complexity and brings to a performance degradation.
+
+\myskip
+
+The sanitizers tool that we used are the following:
+\begin{itemize}
+    \item \textbf{Address (ASan)}: Is usefull for the detection of memory corruction errors like buffer over flow, use after free and memory leak.
+    \item \textbf{Undefined (UBSan)}: Is usefull for the detection of undefined behavior in the code, i.e., partion of code that isn't conformant with the standard.
+\end{itemize}
+
+\subsection{Profiler}
+Profiling is a technique for analysing the performance of our software: it is usefull to understand where the code spends most of its time and how many functions are called.
+
+There are two techniques that profilers use: sampling, that is more efficient but less precise; instrumentation, that is very accurate but more expensive.
+
+\myskip
+
+In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/Profiling_with_GPerfTools}{GPerfTools}. We install it with HomeBrew, but this doesn't install the \textit{pprof} tool for the analysis. The new version was found \href{https://github.com/google/pprof}{here}, and it is developed by Google in Go.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Execution}
+To execute the project you have to execute one of the shell script in \href{https://github.com/edoardosarri24/parallel-trigrams/blob/master/exec}{exec folder}. The \textit{download\_data.sh} is an helper script that is used in the other.

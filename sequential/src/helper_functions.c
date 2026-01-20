@@ -3,20 +3,18 @@
 #include "helper_functions.h"
 #include "my_utils.h"
 
-void preprocess_file() {
+void preprocess_file(const char *input_filepath, const char *output_filepath) {
     // open source and destination.
-    const char *input_path = DATA_DIR"/input.txt";
-    FILE *src = fopen(input_path, "r");
+    FILE *src = fopen(input_filepath, "r");
     check_initialization(src, "Error opening input file. The file MUST be named input.txt and MUST be in data directory.\n");
-    const char *output_path = DATA_DIR"/normalized_text.txt";
-    FILE *dst = fopen(output_path, "w");
+    FILE *dst = fopen(output_filepath, "w");
     check_initialization_eventually_free(dst, src, "Error opening output file");
     // pre-processing.
     int c;
     bool have_to_insert_space = false; // write only one single space.
     bool is_first_word = true; // don't include space at the beginning.
     while ((c = fgetc(src)) != EOF) {
-        if (!isspace(c) && !ispunct(c)) { // ignore tha spaces and the puntation.
+        if (isalnum(c)) { // keep only alphanumeric characters (remove punctuation, symbols, smart quotes).
             if (have_to_insert_space && !is_first_word) { // insert a space only if we already write something and we haven't write a space.
                 fputc(' ', dst);
                 have_to_insert_space = false;

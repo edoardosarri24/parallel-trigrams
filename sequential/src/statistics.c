@@ -53,7 +53,6 @@ void print_text_statistics(HashTable *hashTable) {
     // sort top_ngrams and print statistics.
     qsort(top_ngrams, filled, sizeof(Node *), compare_nodes);
     printf("Total unique n-grams: %zu\n", unique_ngrams);
-    printf("-----------------------\n");
     printf("Top %d n-grams:\n", TOP_K);
     for (int i = 0; i < filled; ++i) {
         printf("%d - '%s': %d\n", i + 1, top_ngrams[i]->gram, top_ngrams[i]->counter);
@@ -82,7 +81,6 @@ void print_hashtable_statistics(HashTable *hashTable) {
         }
     }
     // print statistics.
-    printf("Hash Table Statistics:\n");
     printf("-Total buckets: %d\n", hashTable->buckets_size);
     printf("-Busy buckets: %zu\n", busy_buckets);
     printf("-Total elements: %zu\n", total_elements);

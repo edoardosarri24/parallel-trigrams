@@ -1,9 +1,12 @@
 File: libc++.1.dylib
 Type: cpu
-Showing nodes accounting for 15.13s, 99.41% of 15.22s total
-Dropped 4 nodes (cum <= 0.08s)
+Showing nodes accounting for 15.33s, 99.93% of 15.34s total
+Dropped 1 node (cum <= 0.08s)
       flat  flat%   sum%        cum   cum%
-    15.12s 99.34% 99.34%     15.22s   100%  [libc++.1.dylib]
-     0.01s 0.066% 99.41%      4.83s 31.73%  _preprocess_file
-         0     0% 99.41%     15.22s   100%  _main
-         0     0% 99.41%     10.28s 67.54%  _next_ngram
+    12.25s 79.86% 79.86%     12.25s 79.86%  [libsystem_kernel.dylib]
+     2.96s 19.30% 99.15%     15.34s   100%  [libc++.1.dylib]
+     0.08s  0.52% 99.67%      0.09s  0.59%  _add_gram
+     0.02s  0.13% 99.80%     10.16s 66.23%  _next_ngram
+     0.02s  0.13% 99.93%      4.91s 32.01%  _preprocess_file
+         0     0% 99.93%     12.32s 80.31%  [libsystem_c.dylib]
+         0     0% 99.93%     15.34s   100%  _main
