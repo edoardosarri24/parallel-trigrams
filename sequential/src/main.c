@@ -6,39 +6,52 @@
 #include "my_utils.h"
 
 int main() {
-    // time measurement start
+    // time measurement start.
     double start_time = omp_get_wtime();
-
-    // pre-processing
-    double start_time_preprocessing = omp_get_wtime();
-    const char *input_filepath = DATA_DIR"/input.txt";
-    const char *normalized_filepath = DATA_DIR"/normalized_input.txt";
-    preprocess_file(input_filepath, normalized_filepath);
-    double end_time_preprocessing = omp_get_wtime();
 
     // populate the hash table.
     double start_time_populate = omp_get_wtime();
-    HashTable *hashTable = populate_hashtable(normalized_filepath);
+    const char *input_filepath = DATA_DIR"/input.txt";
+    HashTable *hashTable = populate_hashtable(input_filepath);
     double end_time_populate = omp_get_wtime();
 
-    // visualize statistics
+    // statistics.
     double start_time_statistics = omp_get_wtime();
     printf("\n----- TEXT STATISTICS -----\n");
-    print_text_statistics(hashTable);
+    TextStatistics text_stats = calculate_text_statistics(hashTable);
+    if (text_stats.unique_ngrams == 0) {
+        printf("No n-grams found.\n");
+    } else {
+        printf("Total unique %d-grams: %zu\n", N_GRAM_SIZE, text_stats.unique_ngrams);
+        printf("Top %d n-grams:\n", TOP_K);
+        for (int i = 0; i < text_stats.top_filled; ++i) {
+            printf("%d - '%s': %d\n", i + 1, text_stats.top_ngrams[i]->gram, text_stats.top_ngrams[i]->counter);
+        }
+    }
     printf("\n----- HASHTABLE STATISTICS -----\n");
-    print_hashtable_statistics(hashTable);
+    HashTableStatistics ht_stats = calculate_hashtable_statistics(hashTable);
+    printf("-Total buckets: %d\n", ht_stats.buckets_size);
+    printf("-Busy buckets: %zu\n", ht_stats.busy_buckets);
+    printf("-Total elements: %zu\n", ht_stats.total_elements);
+    printf("-Max chain length: %zu\n", ht_stats.max_chain_len);
+    printf("-Avg chain length: %.2f\n", ht_stats.busy_buckets > 0 ? ((double)ht_stats.total_elements / ht_stats.busy_buckets) : 0.0);
+    printf("-Load Factor (elements/buckets): %.4f\n", (double)ht_stats.total_elements / ht_stats.buckets_size);
+    printf("-Fill Factor (busy/total): %.4f\n", (double)ht_stats.busy_buckets / ht_stats.buckets_size);
     double end_time_statistics = omp_get_wtime();
 
-    // close
+    // free the hash table.
+    double start_time_free = omp_get_wtime();
     free_hash_table(hashTable);
-
-    // time measurement end
+    double end_time_free = omp_get_wtime();
     double end_time = omp_get_wtime();
+
+    // print time statistics.
     printf("\n----- TIME STATISTICS -----\n");
     printf("Total execution time: %.4f seconds\n", end_time - start_time);
-    printf("Pre-processing time: %.4f seconds\n", end_time_preprocessing - start_time_preprocessing);
     printf("Populate hashtable time: %.4f seconds\n", end_time_populate - start_time_populate);
     printf("Statistics time: %.4f seconds\n", end_time_statistics - start_time_statistics);
+    printf("Free hashtable time: %.4f seconds\n", end_time_free - start_time_free);
 
+    // return.
     return EXIT_SUCCESS;
 }

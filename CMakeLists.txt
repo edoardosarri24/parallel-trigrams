@@ -18,6 +18,13 @@ if(ENABLE_SANITIZER)
 endif()
 
 # OpenMP
+if(APPLE)
+    if(EXISTS "/opt/homebrew/opt/libomp")
+        set(OpenMP_ROOT "/opt/homebrew/opt/libomp")
+    elseif(EXISTS "/usr/local/opt/libomp")
+        set(OpenMP_ROOT "/usr/local/opt/libomp")
+    endif()
+endif()
 find_package(OpenMP REQUIRED)
 
 # GPerftools Profiling
@@ -33,9 +40,9 @@ if(ENABLE_PROFILING)
 endif()
 
 # hyperparameters
-set(N_GRAM_SIZE 3 CACHE STRING "Size of the n-gram")
+set(N_GRAM_SIZE 6 CACHE STRING "Size of the n-gram")
 set(STRIDE 1 CACHE STRING "Stride for the sliding window")
-set(TOP_K 10 CACHE STRING "Number of top n-grams to display")
+set(TOP_K 11 CACHE STRING "Number of top n-grams to display")
 
 # projects
 add_subdirectory(sequential)

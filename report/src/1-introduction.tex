@@ -1,33 +1,28 @@
 \chapter{Introduction}
 The main goal of this project is to count the $n$-gram (the occurencies of $n$ consecutive word) present in an input file. This will be addressed with two approaches: with the sequential implementation in Chapter~\ref{cap:sequential} and with the parallel implementation in Chapter~\ref{cap:parallel}. After these tow implementations we will evaluate the performance in Chapter~\ref{cap:analysis}, with particular focus on the speed-up.
 
-The input file of our analysis was taken from \href{https://wortschatz.uni-leipzig.de/en/download/eng}{Wortschatz Leipzig project}.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Features}
 Obviously the main goal is two count the $n$-gram. Others features are:
 \begin{itemize}
     \item We can define the $n$ value (of the $n$-gram) at compilation time passing the parameter $N\_GRAM\_SIZE$. By default is $N\_GRAM\_SIZE=3$.
-    \item There is a stride $k$ that allow us to skip $k$ word when we compute the next $n$-gram. We can provide it during the compilation with $STRIDE$ parameter. By default is $STRIDE=1$.
     \item At the end of computation, the system print some statistics (see Section~\ref{sec:statistics}) abount the text and abount the hash table performance.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Pre-processing}
-The pipeline that we followed for the input pre-processing consists in collect the input file and normalizating it.
-
-\subsection{Input collection}
-The file that we will analyse must be in the \textit{data/} folder and must be named as \textit{input.txt}.
-
-\subsection{Normalization}
+\section{Input and normalization}
 \label{sec:normalizzation}
+The code working, for semplifing the implementation, only with english sentences. The input file for our analysis was taken from \href{https://wortschatz.uni-leipzig.de/en/download/eng}{Wortschatz Leipzig project}, that contains a big corpus of english text.
+
+\myskip
+
 We want normalizing the input so that similar words will be rappresented by the same token, i.e., we want create equivalence classes that contain similar words. This help us to reduce the dimension of the word dictionary that composes the tringrams.
 
 We addressed this in these ways:
 \begin{itemize}
     \item Bring all characters in lower case form.
     \item Remove all the punctuation like periods, commas and exclamation points.
-    \item We mantain only one type of separatore between the words, i.e. single space. This help us when we have to bound a word.
+    \item We maintain only the numbers and the letterns.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,7 +48,7 @@ Considering what was said above, the hash table has these characteristics:
 For the $M$ and $p$ value in generale there is a rule of thumb that says to pick both values as prime numbers with M as large as possible. Starting from this:
 \begin{itemize}
     \item $p$: Must be grether than the dimension of the alphabet to reduce the probability of collisions. In the computing we analyse the corpus byte-by-byte, so if the $p$ value is larger thant 256 it will be fine. We took $p=257$, the first prime number after 256.
-    \item $M$: The choice of $M$ determ the fill factor of the hash table, that can be defined as $\alpha=\tfrac{busy\_buckets}{table\_dimension}$. We compute it empirically as $M=10000019$; this choice allow us to have a good fill factor (i.e., 0.75 circa) in order to have a good compromise between memory usage and speed.
+    \item $M$: The choice of $M$ determ the fill factor of the hash table, that can be defined as $\alpha=\tfrac{busy\_buckets}{table\_dimension}$. We compute it empirically as $M=10000019$; this choice allow us to have a good fill factor (i.e., 0.75 circa) in a big corpus in order to have a good compromise between memory usage and speed.
 \end{itemize}
 
 \subsection{Overflow}
@@ -72,7 +67,7 @@ We have considered the below statistics:
     \item Text statistics \\
         We cosidered the follow text statistics:
         \begin{itemize}
-            \item The $K$ $n$-gram with the highest frequency (with thei frequency). The parameter $K$ can be configured at compilation time with the parameter $TOP\_K$ (default $TOP\_K=10$).
+            \item The $K$ $n$-gram with the highest frequency (with their frequency). The parameter $K$ can be configured at compilation time with the parameter $TOP\_K$ (default $TOP\_K=10$).
             \item The number of unique $n$-gram.
         \end{itemize}
     \item Hash table performance \\
