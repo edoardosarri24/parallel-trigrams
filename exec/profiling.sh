@@ -3,7 +3,7 @@
 ./exec/download_data.sh
 echo "building..."
 rm -rf build
-cmake -S . -B build -DENABLE_SANITIZER=OFF -DENABLE_PROFILING=ON
+cmake -S . -B build -DENABLE_AUBSAN=OFF -DENABLE_PROFILING=ON -DENABLE_MSAN=OFF
 cmake --build build
 echo "executing..."
 CPUPROFILE=whole.prof ./build/sequential/sequential_trigrams

@@ -1,18 +1,24 @@
 #include <stdlib.h>
+#include <sys/mman.h>
 #include <omp.h>
 #include "hash_table.h"
-#include "helper_functions.h"
+#include "main_functions.h"
 #include "statistics.h"
 #include "my_utils.h"
 
 int main() {
-    // time measurement start.
+    // total time start.
     double start_time = omp_get_wtime();
+
+    // open the input file
+    const char *input_filepath = DATA_DIR"/input.txt";
+    size_t input_size = 0;
+    const char *input_data = map_file(input_filepath, &input_size);
 
     // populate the hash table.
     double start_time_populate = omp_get_wtime();
-    const char *input_filepath = DATA_DIR"/input.txt";
-    HashTable *hashTable = populate_hashtable(input_filepath);
+    HashTable *hashTable = populate_hashtable(input_data, input_size);
+    munmap((void *)input_data, input_size);
     double end_time_populate = omp_get_wtime();
 
     // statistics.
@@ -43,6 +49,8 @@ int main() {
     double start_time_free = omp_get_wtime();
     free_hash_table(hashTable);
     double end_time_free = omp_get_wtime();
+
+    // total time end.
     double end_time = omp_get_wtime();
 
     // print time statistics.

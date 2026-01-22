@@ -36,6 +36,13 @@ While prioritizing simplicity, you must still respect fundamental C efficiency p
 - **Typing:** Use size_t for indices and fixed-width types (int32_t, uint64_t) from <stdint.h> for clarity and portability.
 - **Branching:** Keep logic linear where possible to help the branch predictor, but do not sacrifice readability for micro-optimizations.
 
+# Parallelization Readiness (OpenMP)
+Although the current implementation is sequential (sequential/ folder), it serves as the baseline for future parallelization (eventually parallel/ folder).
+- **Thread Safety:** Avoid `static` variables inside functions and global mutable state. Functions should be reentrant.
+- **Loop Structure:** Write loops in canonical forms (e.g., standard for-loops with integer counters) to facilitate `pragma omp parallel for`.
+- **Data Independence:** Minimize loop-carried dependencies. Design algorithms where iterations can ideally be computed independently.
+- **Data Locality:** Structure data to maximize locality, which benefits both sequential cache usage and future parallel thread affinity.
+
 # CMake Management
 - Always use "Modern CMake" (target-based approach).
 - Ensure the build system is configured to generate a clean executable in the build folder.

@@ -13,7 +13,7 @@ Let's look the pipeline of our sequential algorithm. This was implemented in \hr
     \item We iterate through the rest of the file word by word:
     \begin{enumerate}
         \item Read the next word an write it into the circular buffer.
-        \item Construct the current $n$-gram string by concatenating the words in the buffer starting from the correct head.
+        \item Construct the current $n$-gram string by concatenating the words in the buffer starting from the correct head. To handle tokens with a very high length we use a buffer with 256 bytes allocated in the stack.
         \item Use the \texttt{add\_gram} function in \href{https://github.com/edoardosarri24/parallel-trigrams/blob/cf8e82b27f908c5c836d37a205fc04d8d7fed5be/sequential/src/hash_table.c}{hash\_table.c} file to add the $n$-gram to the hash table. If the $n$-gram already exists, its counter is incremented; otherwise, a new node is created and inserted into the bucket's chain.
         \item Advance the circular buffer head, effectively sliding the window one word forward.
     \end{enumerate}

@@ -5,7 +5,7 @@ add_executable(sequential_trigrams)
 target_sources(sequential_trigrams PRIVATE
     src/main.c
     src/hash_table.c
-    src/helper_functions.c
+    src/main_functions.c
     src/statistics.c
     src/my_utils.c
 )

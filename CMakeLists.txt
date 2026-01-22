@@ -10,11 +10,18 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_compile_options(-Wall -Wextra) # fault and styling flags.
 
-# sanitizers
-option(ENABLE_SANITIZER "Enable address and undefined sanitizers" OFF)
-if(ENABLE_SANITIZER)
+# sanitizers ENABLE_AUBSAN
+option(ENABLE_AUBSAN "Enable address and undefined sanitizers" OFF)
+option(ENABLE_MSAN "Enable memory sanitizer" OFF)
+if(ENABLE_AUBSAN AND ENABLE_MSAN)
+    message(FATAL_ERROR "Cannot enable both AddressSanitizer (ENABLE_AUBSAN) and MemorySanitizer (ENABLE_MSAN) at the same time.")
+endif()
+if(ENABLE_AUBSAN)
     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer) # the last is for clear messages
     add_link_options(-fsanitize=address,undefined)
+elseif(ENABLE_MSAN)
+    add_compile_options(-fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=memory)
 endif()
 
 # OpenMP

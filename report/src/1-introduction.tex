@@ -32,7 +32,7 @@ We have to be able to count the trigrams; to address efficiently this goal we wi
 
 \subsection{Hash function}
 \label{sec:hash_function}
-In a hash table we must define the hash function to calculate the table index of the elements. We have to calculate the index of strings, so we adopt the \textbf{Polynomial Rolling Hash} technique~\cite{polinomial_strings_hashing}: given the string $c=c_1\cdots c_n$, its hash value is defined by $$\displaystyle H(c)=\sum_{i=1}^n(c_i\cdot p^{i-1})mod M.$$
+In a hash table we must define the hash function to calculate the table index of the elements. We have to calculate the index of strings, so we adopt the \textbf{Polynomial Hash} technique~\cite{polinomial_strings_hashing}: given the string $c=c_1\cdots c_n$, its hash value is defined by $$\displaystyle H(c)=\left(\sum_{i=1}^n c_i\cdot p^{n-i}\right) \mod M.$$
 
 This approch to obtain the hash value is inefficient and dangerous for the overflow. We can exploit the distributive property of the module operation: given $H(c_1\cdots c_i)$, we can obtain $H(c_1\cdots c_ic_{i+1})=(H(c_1\cdots c_i)\cdot p+c_{i+1})mod M$. This garantee, with the correct choice of $p$ and $M$ like the one below, the absence of overflow.
 
@@ -94,6 +94,7 @@ The sanitizers tool that we used are the following:
 \begin{itemize}
     \item \textbf{Address (ASan)}: Is usefull for the detection of memory corruction errors like buffer over flow, use after free and memory leak.
     \item \textbf{Undefined (UBSan)}: Is usefull for the detection of undefined behavior in the code, i.e., partion of code that isn't conformant with the standard.
+    \item \textbf{Memory (MSan)}: Detects the use of uninitialized memory. In MacOS it isn't supported, but it is present anyway.
 \end{itemize}
 
 \subsection{Profiler}
