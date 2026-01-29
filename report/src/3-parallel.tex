@@ -5,22 +5,29 @@ In this chapter we present the main aspect of the parallel implementation to cou
 The repository of the project is the same, and \href{https://github.com/edoardosarri24/parallel-trigrams/blob/ef94c1127b974ed4241ad355c5d9b218b3484e1f/parallel}{this} is the corresponding folder for the parallel version.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Implementation Design Analysis}
+\section{Implementation Design}
 In this section we describe the idea that was used in the parallel implementation. We will treat the pipeline of the program in the Section \ref{sec:par_pipeline}.
 
-There are two choices to solve the problem of frequency count. We adopt the first one.
-\begin{itemize}
-    \item \textbf{Map-reduce} \\
-    With this pattern we allocate a private hash table for each thread. We make $n$ partition of the input file (where $n$ is the number of threads) and each thread treats his partition locally. When all threads have populated their hash table, we make a partition of the buckets, and each thread is responsible of merging its partition in a global hash table. This approach is reasonable because the hash is a deterministic function, and the hash of a given $k$-gram is the same for each thread. \\
-    In this way no lock is necessary and there is no contention. The program can scale up when the input dimension grow; we have only the limit of the RAM dimension.
-    \item \textbf{Shared hash table} \\
-    All threads write in a global hash table. The contention on the structure is guaranteed from an array of locks, each of them locking a partition of the table: if a thread wants to write in the chain of a block it must acquire the related lock.
-    If we have a limited and small memory this is probably the best solution. We have a lock overhead and a possible false sharing if more threads treat the same $k$-gram frequently.
-\end{itemize}
+\subsection{Map-Reduce}
+With this pattern we allocate a private hash table for each thread. We make $n$ partition of the input file (where $n$ is the number of threads) and each thread treats his partition locally. When all threads have populated their hash table, we make a partition of the buckets, and each thread is responsible of merging its partition in a global hash table. This approach is reasonable because the hash is a deterministic function, and the hash of a given $k$-gram is the same for each thread.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Implementing choice}
+In this way no lock is necessary and there is no contention. The program can scale up when the input dimension grow; we have only the limit of the RAM dimension.
+
+\subsection{Hash Table Dimension}
 In the sequential version we have a hash table with 10000019 buckets. We have evaluated also the reduction of the local hash table dimension of a $\tfrac{1}{T}$ factor. This is a good idea if the memory is a problem, because it reduces the dimension of the table of the single thread, and this makes sense because each thread works only on a partition of the whole input file; in total we have circa $76 \times T$ MB allocated for the hash table, where $T$ is the number of threads. The contra of this approach is that during the merge phase we have to handle concurrent writes on the global hash table; using the same dimension for the local and global hash table allows us to avoid the concurrent write on the global structure, as we can map local buckets to global buckets 1:1 without collisions between merging threads.
+
+\subsection{Arena Management}
+In the sequential version, a memory arena is used to manage node allocations efficiently. In the parallel version during the merge phase, multiple threads may need to allocate new nodes in the global hash table simultaneously. Using a single global arena require to protect the allocation function with a lock, creating a bottleneck due to high contention.
+
+To address this efficiently, we implemented a thread-local arena: at the beggining of the merge phase, each thread create a temporary private arena; the allocation of memory to create a new node doesn't touch the global arena, but only the private arena and this means no syncronization.
+At the end of the merge phase, we utilize a connection mechanism: since our arena (both local and global) is implemented as a linked list of memory blocks, we can transfer ownership of these blocks from the fork thread to the main thread simply appending these chains. This operation is performed in a minimal critical section and involves only pointer manipulation, i.e. the time is in $O(1)$ regarding data size.
+
+The dimension of block in the local arena is 1MB. This minimizing the frequnecy of \texttt{malloc} calls, that implies a lock in the system and so an overhead.
+
+We can see this pattern as a nested map-reduce: the first is a data map-reduce; the second is a memory map-reduce. This avoid the bottleneck that usually is present in the classical reduce phase.
+
+\subsection{Statistics}
+The extraction of statistics is the same of the sequential version (see Section~\ref{sec:sequential_statistics}) and it is performed sequentially by the main thread after the parallel region has completed. The execution time of this step is irrilevant comparing to the others parts.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pipeline}
@@ -34,8 +41,19 @@ Before entering the parallel region, the main thread allocates the following res
     \item \textbf{Local Tables Array}: We allocate an array of pointers to HashTable struct of size \texttt{omp\_get\_max\_threads()}. This function return the numbers of thread that openMP will allocated in a parallel region; if you use the classic function like \texttt{omp\_get\_num\_threads()} out of parallel region, the function returns 1.
 \end{itemize}
 
+\myskip
+
+We enforced the variables scope passing to the OpenMP clause \texttt{default(none)} on the parallel region directive. This avoid accidental race conditions or unintended sharing. More in detail we have define as:
+\begin{itemize}
+    \item \texttt{shared(local\_tables, global\_table)}: These structures are accessed by all threads for writing their local instance and merging into the global one.
+    \item \texttt{firstprivate(start, end)}: The input buffer pointers are copied to each thread's stack. This provides a minor performance benefit.
+\end{itemize}
+
 \subsection{Populate (Map)}
-This phase is executed in parallel region, where each thread populates its own private local hash table. Like we saw above, this garantee no race condition and allow the maximum valocity with the scaling of the input file.
+This phase is executed in a parallel region, where each thread populates its own private local hash table. As discussed above, this guarantees no race conditions and allows for maximum scalability with the input file size.
+
+The parallel regione doesn't be created with a simple \texttt{\#pragma omp parallel for} on the mapped file buffer. The reason is that the hand made chinking is more usefull and power in this, leaving more flexibility to us to define the $n$-gram boundaries.
+
 \begin{enumerate}
     \item \textbf{Chunking}: The input file size is divided by $N$ to calculate the \texttt{chunk\_size}, where $N$ is the number of threads. In this way each thread is assigned to a theoretical range $[start, end)$.
     \item \textbf{Alignment}: Since a mathematical division can land in the middle of a word, we apply an alignment correction. If a thread detects that the character immediately preceding its \texttt{start} pointer is alphanumeric, it means the previous word was cut. The thread advances its \texttt{start} pointer until the beginning of the next valid word. This was done for each threat but not for the main thead, because its start is already set and it can start immediatly the computation.
@@ -44,8 +62,11 @@ This phase is executed in parallel region, where each thread populates its own p
 \end{enumerate}
 
 \subsection{Merge (Reduce)}
-This pahse begin woth a barrir: after this point all thread have populated its own local hash table and the thread can start to merge the local hash table in the global one.
+This phase begins with a barrier: after this point all threads have populated their own local hash table and they can start to merge the local hash table in the global one.
 \begin{itemize}
-    \item \textbf{Bucket-Parallelism}: Instead of parallelizing over threads (which would require locking the global table), we parallelize over the bucket indices of the hash table. This means that each thread is assigned to a partition of the global table and of each local table: no lock or mutex are required beause only one thread work on the cell $i$ of each table (local and global).
+    \item \textbf{Bucket-Parallelism}: Instead of parallelizing over threads (which would require locking the global table), we parallelize over the bucket indices of the hash table. This means that each thread is assigned to a partition of the global table and of each local table: no lock or mutex are required because only one thread works on the cell $i$ of each table (local and global).
     \item \textbf{Dynamic Scheduling}: We use a dinamyc assignament of the partiotion to the thread due to the sparsity of the hash table. In this way if a thread finish earlier respect the others, all cores remains busy.
+    \item \textbf{False Sharing}: With the usage of \texttt{dinamyc} we could have a potential performance killer with the false sharing: since multiple pointers (8 bytes each) fit in a single cache line (typically 64 bytes), adjacent buckets share the same cache line; if two threads process adjacent buckets (as in default scheduling with $\texttt{block\_size}=1$), they would continuously invalidate each other's cache lines. So we have defined the block size as $(64/\texttt{sizeof(Node*)})\times16$: each chunk is aligned with cache lines; the chunk is large enough (16 cache lines, 1024 bytes) to amortize the OpenMP scheduling overhead.
+    \item \textbf{Dynamic Scheduling}: We use a dynamic assignment with \texttt{chunk\_size} described above to handle the sparsity of the hash table. In this way if a thread finishes earlier respect the others, all cores remain busy.
+    \item \textbf{Barrier}: At the end of a \texttt{\#pragma omp for} there is an implicit barrier. Insert a \texttt{nowait} cluase would be a mistake, becasue it implies that the local table of the other thread will be free cusing a segmentation fault.
 \end{itemize}

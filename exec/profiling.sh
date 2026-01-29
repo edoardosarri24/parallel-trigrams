@@ -15,7 +15,7 @@ fi
 
 echo "building..."
 rm -rf build
-cmake -S . -B build -DENABLE_AUBSAN=OFF -DENABLE_PROFILING=ON -DENABLE_MSAN=OFF
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_AUBSAN=OFF -DENABLE_PROFILING=ON -DENABLE_MSAN=OFF
 cmake --build build
 
 echo "executing ($MODE)..."
@@ -32,3 +32,5 @@ CPUPROFILE=whole.prof "$TARGET"
 "$PPROF_PATH" -top "$TARGET" whole.prof > "$OUT_DIR/profile.txt"
 "$PPROF_PATH" -pdf "$TARGET" whole.prof > "$OUT_DIR/profile.pdf"
 rm whole.prof
+
+echo "Profiling results saved to $OUT_DIR"

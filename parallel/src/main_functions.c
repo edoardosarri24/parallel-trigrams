@@ -70,6 +70,51 @@ const char* map_file(const char *input_filepath, size_t *input_size) {
     return input_data;
 }
 
+static void populate_local_table(HashTable *my_table, const char *data_cursor, const char *my_end, const char *end) {
+    // variables.
+    char words[N_GRAM_SIZE][MAX_WORD_LEN];
+    size_t lengths[N_GRAM_SIZE];
+    const char *word_starts[N_GRAM_SIZE]; // Circular buffer for word start positions
+    // fill the N_GRAM_SIZE-1 initial words in the circular buffer.
+    for (int i=0; i < N_GRAM_SIZE-1; i++) {
+        if (!get_next_word(&data_cursor, end, words[i], &lengths[i], &word_starts[i])) {
+            return;
+        }
+        // a k-gram is in my zone if its first word in my zone.
+        if (i==0 && my_end < end && word_starts[0] >= my_end) { // the last thread can not enter in the other thread zone.
+            return;
+        }
+    }
+    int head = 0;
+    char current_ngram_string[N_GRAM_SIZE * MAX_WORD_LEN];  // the start of the new k-gram.
+    // main loop.
+    while (get_next_word(&data_cursor, end, words[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE],
+            &lengths[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE],
+            &word_starts[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE])) {
+        //check if the current k-gram belongs to this thread, i.e., if the the first word is within [my_start, my_end).
+        if (my_end < end && word_starts[head] >= my_end)
+            break;
+
+        // construct the n-gram string from the current window.
+        char *dest = current_ngram_string;
+        for (int i = 0; i < N_GRAM_SIZE; i++) {
+            int idx = (head + i) % N_GRAM_SIZE;
+            size_t len = lengths[idx];
+            memcpy(dest, words[idx], len);
+            dest += len;
+            if (i < N_GRAM_SIZE-1) {
+                *dest = ' ';
+                dest++;
+            }
+        }
+        *dest = '\0';
+        // handle the current n-gram.
+        size_t ngram_len = dest - current_ngram_string;
+        add_gram(my_table, current_ngram_string, ngram_len);
+        head = (head + 1) % N_GRAM_SIZE;
+    }
+}
+
 HashTable* populate_hashtable(const char *start, const char *end) {
     // initializing hash table and continue if the input file is ok.
     HashTable *global_table = create_hash_table(HASH_TABLE_DIMENSION);
@@ -79,7 +124,7 @@ HashTable* populate_hashtable(const char *start, const char *end) {
     int max_threads = omp_get_max_threads(); // avoid segmentation falut on the local hashtable.
     HashTable **local_tables = (HashTable **)calloc(max_threads, sizeof(HashTable*));
     check_initialization(local_tables, "Failed to allocate local_tables array");
-    #pragma omp parallel
+    #pragma omp parallel default(none) shared(local_tables, global_table) firstprivate(start, end)
     {
         // chunking and threads bounds.
         int tid = omp_get_thread_num();
@@ -99,71 +144,32 @@ HashTable* populate_hashtable(const char *start, const char *end) {
         // initialize local hash table.
         HashTable *my_table = create_hash_table(HASH_TABLE_DIMENSION);
         local_tables[tid] = my_table;
-        // variables.
-        char words[N_GRAM_SIZE][MAX_WORD_LEN];
-        size_t lengths[N_GRAM_SIZE];
-        const char *word_starts[N_GRAM_SIZE]; // Circular buffer for word start positions
-        const char *data_cursor = my_start;
-        // fill the N_GRAM_SIZE-1 initial words in the circular buffer.
-        bool enough_words = true; // usefull for undestand if the the merge part is to do.
-        for (int i=0; i < N_GRAM_SIZE-1; i++) {
-            if (!get_next_word(&data_cursor, end, words[i], &lengths[i], &word_starts[i])) {
-                enough_words = false;
-                break;
-            }
-            // a k-gram is in my zone if its first word in my zone.
-            if (i==0 && tid != n_threads-1 && word_starts[0] >= my_end) { // the last thread can not enter in the other thread zone.
-                enough_words = false;
-                break;
-            }
-        }
-        // process the input file word by word if the initial buffer is ok.
-        if (enough_words) { //pensare a come levarlo.
-            int head = 0;
-            char current_ngram_string[N_GRAM_SIZE * MAX_WORD_LEN];  // the start of the new k-gram.
-            // main loop.
-            while (get_next_word(&data_cursor, end, words[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE],
-                    &lengths[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE],
-                    &word_starts[(head + N_GRAM_SIZE - 1) % N_GRAM_SIZE])) {
-                //check if the current k-gram belongs to this thread, i.e., if the the first word is within [my_start, my_end).
-                if (tid != n_threads - 1 && word_starts[head] >= my_end)
-                    break;
-
-                // construct the n-gram string from the current window.
-                char *dest = current_ngram_string;
-                for (int i = 0; i < N_GRAM_SIZE; i++) {
-                    int idx = (head + i) % N_GRAM_SIZE;
-                    size_t len = lengths[idx];
-                    memcpy(dest, words[idx], len);
-                    dest += len;
-                    if (i < N_GRAM_SIZE-1) {
-                        *dest = ' ';
-                        dest++;
-                    }
-                }
-                *dest = '\0';
-                // handle the current n-gram.
-                size_t ngram_len = dest - current_ngram_string;
-                add_gram(my_table, current_ngram_string, ngram_len);
-                head = (head + 1) % N_GRAM_SIZE;
-            }
-        }
+        // populate local hash table.
+        populate_local_table(my_table, my_start, my_end, end);
         #pragma omp barrier // wait the population of all local hastable.
         // merge phase.
-        #pragma omp for schedule(dynamic) // hadle the sparty of the hash table.
-        for (int i = 0; i < HASH_TABLE_DIMENSION; i++) {
-            for (int t = 0; t < n_threads; t++) {
+        Arena *my_arena = create_arena(1024 * 1024); // 1MB block.
+        int bucket_chunk_size = (64 / sizeof(Node*)) * 16; // hadles the false sharing and the overhead.
+        #pragma omp for schedule(dynamic, bucket_chunk_size) // dinamyc hadles the sparsity of the hash table
+        for (int i=0; i < HASH_TABLE_DIMENSION; i++) {
+            for (int t=0; t < n_threads; t++) {
                 Node *node = local_tables[t]->buckets[i];
                 while (node) {
-                    add_gram_to_bucket(global_table, i, node->gram, node->counter);
+                    add_gram_to_bucket(global_table, i, node->gram, node->counter, my_arena);
                     node = node->next;
                 }
             }
         }
+        // safely merge the thread-local arena into the global one.
+        #pragma omp critical
+        {
+            arena_connect(global_table->mem_arena, my_arena);
+        }
+        arena_free(my_arena); // struct only, blocks moved
+
         // free local table
         free_hash_table(my_table);
     }
-
     free(local_tables);
     return global_table;
 }

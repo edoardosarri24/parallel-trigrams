@@ -50,7 +50,7 @@ void add_gram(HashTable *table, const char *gram, size_t gram_len) {
     table->buckets[index] = new_node;
 }
 
-void add_gram_to_bucket(HashTable *table, int bucket_index, const char *gram, int count) {
+void add_gram_to_bucket(HashTable *table, int bucket_index, const char *gram, int count, Arena *alloc_arena) {
     // travrse the global chain to find if it exists.
     Node *current_node = table->buckets[bucket_index];
     // if exists, sum the counter of new n-gram to the old counter.
@@ -65,7 +65,7 @@ void add_gram_to_bucket(HashTable *table, int bucket_index, const char *gram, in
     // if not found, create a new node in global chain.
     size_t gram_len = strlen(gram);
     size_t requested_size = sizeof(Node) + gram_len + 1;
-    Node *new_node = (Node *)arena_alloc(table->mem_arena, requested_size);
+    Node *new_node = (Node *)arena_alloc(alloc_arena, requested_size);
     new_node->gram = (char *)((uint8_t *)new_node + sizeof(Node));
     strcpy(new_node->gram, gram);
     new_node->counter = count;

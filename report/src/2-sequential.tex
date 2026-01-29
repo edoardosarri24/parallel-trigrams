@@ -23,10 +23,10 @@ Let's look at the pipeline of our sequential algorithm. This was implemented in 
 \end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Hash table}
+\section{Hash Table}
 The \href{https://github.com/edoardosarri24/parallel-trigrams/blob/cf8e82b27f908c5c836d37a205fc04d8d7fed5be/sequential/src/hash_table.c}{hash\_table.c} file models the hash table structure and its operations.
 
-\subsection{Implementing choice}
+\subsection{Implementing Choice}
 In the Section~\ref{sec:overflow} we said that we must use almost a 32-bit variable to avoid the overflow of intermediate value during the index calculation. To obtain this goal we have used the \textit{uint\_fast32\_t} C type that guarantees the faster type that have almost 32 bits.
 
 \myskip
@@ -43,10 +43,10 @@ This approach allows us to reduce the number of \texttt{malloc} operations: we m
 \label{sec:sequential_statistics}
 To extract the statistics described in Section~\ref{sec:statistics}, we implemented two functions in \href{https://github.com/edoardosarri24/parallel-trigrams/blob/master/sequential/src/statistics.c}{statistics.c}. These functions are responsible for the generation of text statistics and hash table performance; the main is responsible for the printing of the results.
 
-\subsection{Text statistics}
+\subsection{Text Statistics}
 For the text statistics, we explored two different approaches, and we choose the second one.
 
-\subsubsection{Two steps approach}
+\subsubsection{Two-Steps Approach}
 The algorithm followed these steps:
 \begin{enumerate}
     \item Traverse the whole hash table structure to count the total number of unique $n$-grams ($N$).
@@ -57,7 +57,7 @@ The algorithm followed these steps:
     \item Free the allocated array.
 \end{enumerate}
 
-\subsubsection{Top-K approach}
+\subsubsection{Top-K Approach}
 This is the algorithm that we implemented in our code.
 \begin{enumerate}
     \item Allocate a small array \textit{top\_ngrams} of pointers of size $TOP\_K$, i.e., the number of top elements requested.
@@ -81,7 +81,7 @@ Let $N$ be the number of unique $n$-grams and $K$ be the number of top elements 
         The first approach requires $O(N)$ extra space for the temporary array. The second approach requires only $O(K)$ that is irrelevant for small $K$.
 \end{itemize}
 
-\subsection{Hash table performance}
+\subsection{Hash Table Performance}
 For the hash table performance the pipeline is the following:
 \begin{enumerate}
     \item Initialize counters, \textit{total\_elements}, \textit{busy\_buckets}, and \textit{max\_chain\_len}, to 0.

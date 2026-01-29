@@ -3,7 +3,7 @@
 mkdir -p data
 if [ ! -f "data/input.txt" ]; then
     echo "downloading dataset..."
-    cd exec/download_inpu_script/
+    cd exec/script_download_input/
     uv run main.py
     cd ../../
 fi

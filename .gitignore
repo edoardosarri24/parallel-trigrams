@@ -4,3 +4,4 @@ build/
 data/
 sequential/result_profiling/
 parallel/result_profiling
+todo.md

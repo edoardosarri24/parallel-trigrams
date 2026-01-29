@@ -12,7 +12,7 @@ Obviously the main goal is to count the $n$-grams. Other features are:
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Input and normalization}
+\section{Input and Normalization}
 \label{sec:normalizzation}
 The code works well, for simplifying the implementation, only with English sentences. This allows us to treat a character as a single byte.
 
@@ -30,7 +30,7 @@ We addressed this in these ways:
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Hash table}
+\section{Hash Table}
 \label{sec:hash_table}
 We have to be able to count the trigrams; to address efficiently this goal we will use the hash-table structure. We have to define the hash function to obtain the index in the hash table and the characteristics of the hash table.
 
@@ -40,7 +40,7 @@ In a hash table we must define the hash function to calculate the table index of
 
 This approach to obtain the hash value is inefficient and dangerous for the overflow. We can exploit the distributive property of the module operation: given $H(c_1\cdots c_i)$, we can obtain $H(c_1\cdots c_ic_{i+1})=(H(c_1\cdots c_i)\cdot p+c_{i+1}) \mod M$. This guarantees, with the correct choice of $p$ and $M$ like the one below, the absence of overflow.
 
-\subsection{Hash table characteristics}
+\subsection{Hash Table Characteristics}
 Considering what was said above, the hash table has these characteristics:
 \begin{itemize}
     \item The dimension of the index vector corresponds to the $M$ value.
@@ -48,7 +48,7 @@ Considering what was said above, the hash table has these characteristics:
     \item Each node of the open chain is composed by the string (i.e., the $n$-gram) as key and the counter as value.
 \end{itemize}
 
-\subsection{Choice of hyperparameters}
+\subsection{Choice of Hyperparameters}
 For the $M$ and $p$ value in general there is a rule of thumb that says to pick both values as prime numbers with M as large as possible. Starting from this:
 \begin{itemize}
     \item $p$: Must be greater than the dimension of the alphabet to reduce the probability of collisions. In the computing we analyse the corpus byte-by-byte, so if the $p$ value is larger than 256 it will be fine. We took $p=257$, the first prime number after 256.

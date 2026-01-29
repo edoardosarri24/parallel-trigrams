@@ -60,6 +60,22 @@ void *arena_alloc(Arena *arena, size_t requested_size) {
     return ptr;
 }
 
+void arena_connect(Arena *dest, Arena *src) {
+    if (!dest || !src || !src->head) return;
+    // find the final block in src.
+    ArenaBlock *tail = src->head;
+    while (tail->next) {
+        tail = tail->next;
+    }
+    // attach dest to src
+    tail->next = dest->head;
+    // the head began the head of src
+    dest->head = src->head;
+    // clear src to avoid double free: arena_free and free_hash_table.
+    src->head = nullptr;
+    src->current = nullptr;
+}
+
 void arena_free(Arena *arena) {
     if (!arena) return;
     // free all blocks.
