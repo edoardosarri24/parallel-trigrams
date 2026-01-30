@@ -156,7 +156,7 @@ We have obtain a speed-up of $sup=\tfrac{t_{seq}}{t_{par}}=10,30$.
 \subsection{2GB size}
 This is absulutely the most insteresting scenario because we can see that the parallel version is slower than the sequential one.
 
-With a low dimention of the input file all, is possibile to store all (or the main part) the information in the cache L3. With a huge dataset we move from and to the main memory and this began a Memory-Bound task and with all core working we have a memory bandwidth saturation. We can see this from the profiling: the 66.71\% of the time is spent in \texttt{populate\_hashtable} function, and 27.68\% in \texttt{libsystem\_platform}, i.e. in \texttt{malloc} function.
+With a low dimention of the input file all, is possibile to store all (or the main part) the information in the cache L3. With a huge dataset we move from and to the main memory and this began a Memory-Bound task and with all core working we have a memory bandwidth saturation.
 
 \myskip
 
