@@ -49,8 +49,8 @@ We enforced the variables scope passing to the OpenMP clause \texttt{default(non
     \item \texttt{firstprivate(start, end)}: The input buffer pointers are copied to each thread's stack. This provides a minor performance benefit.
 \end{itemize}
 
-\subsection{Populate (Map)}
-This phase is executed in a parallel region, where each thread populates its own private local hash table. As discussed above, this guarantees no race conditions and allows for maximum scalability with the input file size.
+\subsection{Populate }
+This phase, the map phase, is executed in a parallel region, where each thread populates its own private local hash table. As discussed above, this guarantees no race conditions and allows for maximum scalability with the input file size.
 
 The parallel regione doesn't be created with a simple \texttt{\#pragma omp parallel for} on the mapped file buffer. The reason is that the hand made chinking is more usefull and power in this, leaving more flexibility to us to define the $n$-gram boundaries.
 
@@ -61,8 +61,8 @@ The parallel regione doesn't be created with a simple \texttt{\#pragma omp paral
     \item \textbf{Buffer}: Before the main loop, we fill a circular buffer with $N_{gram}-1$ words like in the sequential version.
 \end{enumerate}
 
-\subsection{Merge (Reduce)}
-This phase begins with a barrier: after this point all threads have populated their own local hash table and they can start to merge the local hash table in the global one.
+\subsection{Merge}
+This phase, the reduce phase, begins with a barrier: after this point all threads have populated their own local hash table and they can start to merge the local hash table in the global one.
 \begin{itemize}
     \item \textbf{Bucket-Parallelism}: Instead of parallelizing over threads (which would require locking the global table), we parallelize over the bucket indices of the hash table. This means that each thread is assigned to a partition of the global table and of each local table: no lock or mutex are required because only one thread works on the cell $i$ of each table (local and global).
     \item \textbf{Zero-Copy Node Relinking}: When merging a local bucket into a global one, if an n-gram is found we sum the counters, if it's not found in the global table we simply relink the existing node pointer from the local table to the global table; this avoid a several call to \texttt{malloc}. At the end of the parallel region, we use the \texttt{arena\_connect} function to append the local memory arenas (containing the relinked nodes) to the global one.
