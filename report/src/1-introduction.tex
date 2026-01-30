@@ -14,9 +14,9 @@ Obviously the main goal is to count the $n$-grams. Other features are:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Input and Normalization}
 \label{sec:normalizzation}
-The code works well, for simplifying the implementation, only with English sentences. This allows us to treat a character as a single byte.
+For simplifying the implementation the code works well only with English sentences. This allows us to treat a character as a single byte; if there are strange charachters the code could treat them with undefined behaviuor.
 
-We use a simple and small plain text file to understand the correctness of the program. This file came from the \href{https://wortschatz.uni-leipzig.de/en/download/eng}{Wortschatz Leipzig project}, that contains a big corpus of English text; in specific \href{https://downloads.wortschatz-leipzig.de/corpora/eng_news_2024_1M.tar.gz}{this link} is the direct download of the file. For the final test and for the analysis we take a plain text from \href{https://huggingface.co/datasets/allenai/c4/tree/main/en}{Hugging Face}; we download the file until its dimension reaches 1GB.
+The data sources came from a plain text collection of \href{https://huggingface.co/datasets/allenai/c4/tree/main/en}{Hugging Face}. We have a \href{https://github.com/edoardosarri24/parallel-trigrams/blob/7f22592a9d7207587b74a349d66fbb2a12994c38/exec/script_download_input/main.py}{script} that allow as to pass the desiderated size (in MB) and it handles the download in the correct directory with the correct name.
 
 \myskip
 
@@ -112,7 +112,8 @@ In our project we used the \href{https://developer.ridgerun.com/wiki/index.php/P
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Execution}
-The execution of the project requires two steps: the download of test input or real input (the one used for the analysis), simply executing \texttt{download\_test.sh} script or \texttt{download\_input.sh} script in \texttt{exec/} folder; the second step is executing the script named \texttt{execution.sh}, always in the \texttt{exec/} folder. This last script execution executes the program on the file previously downloaded input text with all performance flags on. In the same folder there are also others script for the execution with profiling (different type) or with the sanitizers or in debug mode.
-
-
-To execute the project you have to execute one of the shell script in \href{https://github.com/edoardosarri24/parallel-trigrams/blob/master/exec}{exec folder}. The \textit{download\_data.sh} is a helper script that is used in the other.
+The execution of the project requires two steps:
+\begin{enumerate}
+    \item The download of the input. We have to exec the \texttt{exec/download\_input.sh} script, passing the desiderated dimensione in MB of the final file.
+    \item Finally we can execute one the script in \texttt{exec/} folder. Which scirpt depends on our interest: see \href{https://github.com/edoardosarri24/parallel-trigrams/blob/7f22592a9d7207587b74a349d66fbb2a12994c38/README.md}{README} for more details.
+\end{enumerate}

@@ -1,3 +1,2 @@
-- sistemare reade.
-- tree in readme
 - test
+- cambiare il nome del project

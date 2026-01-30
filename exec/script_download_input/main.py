@@ -1,46 +1,67 @@
-import requests
+import argparse
 import gzip
 import json
-import io
 import os
+import sys
+import requests
 
-OUTPUT_DIRECTORY = "../../data/"
-FILE_NAME = "input.txt"
-TARGET_SIZE = 1024 * 1024 * 1024  # 1 GB
-URLS = [
-    "https://huggingface.co/datasets/allenai/c4/resolve/main/en/c4-train.00000-of-01024.json.gz",
-    "https://huggingface.co/datasets/allenai/c4/resolve/main/en/c4-train.00001-of-01024.json.gz"
-    "https://huggingface.co/datasets/allenai/c4/resolve/main/en/c4-train.00002-of-01024.json.gz"
-]
+# Configuration
+OUTPUT_DIR = "../../data/"
+OUTPUT_FILE = "input.txt"
+# C4 dataset (Colossal Clean Crawled Corpus) - huge, high quality text
+BASE_URL = "https://huggingface.co/datasets/allenai/c4/resolve/main/en/c4-train.{:05d}-of-01024.json.gz"
+MAX_FILES = 1024 
 
-def download_clean_text():
-    if not os.path.exists(OUTPUT_DIRECTORY):
-        os.makedirs(OUTPUT_DIRECTORY)
-    full_path = os.path.join(OUTPUT_DIRECTORY, FILE_NAME)
-    bytes_written = 0
+def get_args():
+    parser = argparse.ArgumentParser(description="Download text data for analysis.")
+    parser.add_argument("size_mb", type=int, nargs="?", default=1024, help="Target size in MB (default: 1024)")
+    return parser.parse_args()
+
+def main():
+    args = get_args()
+    target_bytes = args.size_mb * 1024 * 1024
+    
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    
+    output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
+    current_bytes = 0
+    print(f"Target size: {args.size_mb} MB")
+    print("Downloading...")
     try:
-        with open(full_path, "wb") as out_file:
-            for url in URLS:
-                if bytes_written >= TARGET_SIZE:
+        with open(output_path, "wb") as f_out:
+            for i in range(MAX_FILES):
+                if current_bytes >= target_bytes:
                     break
-                with requests.get(url, stream=True, timeout=120) as r:
-                    r.raise_for_status()
-                    with gzip.GzipFile(fileobj=r.raw) as decompressor:
-                        text_stream = io.TextIOWrapper(decompressor, encoding='utf-8')
-                        for line in text_stream:
-                            try:
-                                data = json.loads(line)
-                                content = data.get("text", "")
-                                if content:
-                                    encoded_content = (content + "\n").encode('utf-8')
-                                    out_file.write(encoded_content)
-                                    bytes_written += len(encoded_content)
-                                if bytes_written >= TARGET_SIZE:
-                                    return
-                            except Exception:
-                                continue
+                url = BASE_URL.format(i)
+                try:
+                    with requests.get(url, stream=True, timeout=60) as r:
+                        r.raise_for_status()
+                        # Streaming decompression
+                        with gzip.GzipFile(fileobj=r.raw) as f_in:
+                            for line in f_in:
+                                try:
+                                    data = json.loads(line)
+                                    text = data.get("text", "")
+                                    if not text:
+                                        continue
+                                    encoded_text = (text + "\n").encode("utf-8")
+                                    f_out.write(encoded_text)
+                                    current_bytes += len(encoded_text)
+                                    if current_bytes >= target_bytes:
+                                        break
+                                except (json.JSONDecodeError, UnicodeDecodeError):
+                                    continue
+                except Exception as e:
+                    print(f"\nWarning: Skipping chunk {i} due to error: {e}", file=sys.stderr)
+                    continue
+        print(f"Output file: {output_path}")
+        print(f"Final size: {current_bytes / (1024*1024):.2f} MB")
+        
+    except KeyboardInterrupt:
+        print(f"\n\nInterrupted. Saved so far: {current_bytes / (1024*1024):.2f} MB")
     except Exception as e:
-        print(f"\n Errore critico: {e}")
+        print(f"\nCritical Error: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
-    download_clean_text()
+    main()
