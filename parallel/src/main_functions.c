@@ -145,28 +145,43 @@ HashTable* populate_hashtable(const char *start, const char *end) {
         // populate local hash table.
         populate_local_table(my_table, my_start, my_end, end);
         #pragma omp barrier // wait the population of all local hastable.
-        // merge phase.
-        Arena *my_arena = create_arena(1024 * 1024); // 1MB block.
+        // merge phase
         int bucket_chunk_size = (64 / sizeof(Node*)) * 16; // hadles the false sharing and the overhead.
         #pragma omp for schedule(dynamic, bucket_chunk_size) // dinamyc hadles the sparsity of the hash table
         for (int i=0; i < HASH_TABLE_DIMENSION; i++) {
             for (int t=0; t < n_threads; t++) {
-                Node *node = local_tables[t]->buckets[i];
-                while (node) {
-                    add_gram_to_bucket(global_table, i, node->gram, node->counter, my_arena);
-                    node = node->next;
+                Node *local_node = local_tables[t]->buckets[i];
+                while (local_node) { // iterate while there is another element in i-th chain in t-th table.
+                    Node *next_local_node = local_node->next;
+                    // search for this node in i-th global hashtable bucket.
+                    Node *global_node = global_table->buckets[i];
+                    bool found = false;
+                    while (global_node) {
+                        if (strcmp(global_node->gram, local_node->gram) == 0) {
+                            global_node->counter += local_node->counter;
+                            found = true;
+                            break;
+                        }
+                        global_node = global_node->next;
+                    }
+                    // if not found, move this node to the global table.
+                    if (!found) {
+                        local_node->next = global_table->buckets[i];
+                        global_table->buckets[i] = local_node;
+                    }
+                    local_node = next_local_node;
                 }
             }
         }
         // safely merge the thread-local arena into the global one.
         #pragma omp critical
         {
-            arena_connect(global_table->mem_arena, my_arena);
+            arena_connect(global_table->mem_arena, my_table->mem_arena);
         }
-        arena_free(my_arena); // struct only, blocks moved
-
-        // free local table
-        free_hash_table(my_table);
+        // free local structs only, data blocks are now in global arena.
+        arena_free(my_table->mem_arena);
+        free(my_table->buckets);
+        free(my_table);
     }
     free(local_tables);
     return global_table;

@@ -2,19 +2,177 @@
 \label{cap:analysis}
 In this chapter we consider the time performance of our project. We will focus on the difference and the speed-up between the sequential version, described in Chapter~\ref{cap:sequential}, and the parallel version, described in Chapter~\ref{cap:parallel}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Sequential}
-Here we evaluate the performance of the sequential implementation of the program.
+We analyze the 3-grams for semplicity and we print only the top-3 frequent 3-grams. We will use the release compiling and the profiling.
 
-\subsection{Arena Allocator}
-With this \href{https://downloads.wortschatz-leipzig.de/corpora/eng_news_2024_1M.tar.gz}{test input file} we obtain a completion time of about 18 seconds. After the implementation that allows us to allocate blocks of contiguous memory, we obtain a total execution time of about 10 seconds. This is a huge improvement in our performance.
-
-We see also the benefit of this approach during the freeing of the hash table. In the first version we took around 2 seconds, while in the final version the free is irrelevant with 0.0027 seconds.
-
-We saw the same effect also using the profiler. In the first version our code spent practically the whole time in system call operations (i.e., \texttt{malloc}); with the second approach the main time is spent in the \texttt{add\_gram} operation.
-
-\subsection{Time Analysis}
-Now we see the performance on the final test case.
+We will use three dimension for the input: a very small datataset (i.e., 100KB), in which we attend that the sequential version obtain better performance; a medium inputs plain text (i.e., 100MB and 500MB); a huge, but not too much for time execution, input file (i.e., 2GB).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Parallel}
+\section{Arena Allocator}
+We have evaluated the different execution time before and after the implementation of arena allocator; before this type of allocation we use a huge numbers of \texttt{malloc} operation. The input file used and the old code are not more available.
+
+The result was: with the first implementation we have a completion time of about 18 seconds; after we obtain a total execution time of about 10 seconds. This is a huge improvement in our performance.
+
+We can also observe the benefit of this approach during the freeing of the hash table. In the first version we took around 2 seconds, while in the final version the free is irrelevant with 0.0027 seconds. We saw the same effect also using the profiler: in the first version our code spent practically the whole time in system call operations (i.e., \texttt{malloc}); with the second approach the main time is spent in the \texttt{add\_gram} operation.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Text Statistics}
+The text statistics are the same for bot sequential and parallel versione of code.
+\begin{itemize}
+    \item 100KB \\
+        The three main frequenty 3-grams are \textit{randallsville new york}, \textit{variety of quartz} and \textit{in the uk}; their frequency are resprctivly 24, 10 and 9.
+    \item 100MB \\
+        The three main frequenty 3-grams are \textit{one of the}, \textit{as well as} and \textit{a lot of}; their frequency are resprctivly 7774, 6995 and 4264.
+    \item 500MB \\
+        The three main frequenty 3-grams are \textit{one of the}, \textit{as well as} and \textit{a lot of}; their frequency are resprctivly 38758, 34863 and 20851.
+    \item 1GB \\
+        The three main frequenty 3-grams are \textit{one of the}, \textit{as well as} and \textit{a lot of}; their frequency are resprctivly 53934, 48790 and 29367.
+    \item 1.5GB \\
+        The three main frequenty 3-grams are \textit{one of the}, \textit{as well as} and \textit{a lot of}; their frequency are resprctivly 118445, 106364 and 64775.
+    \item 2GB \\
+        The three main frequenty 3-grams are \textit{one of the}, \textit{as well as} and \textit{a lot of}; their frequency are resprctivly 157788, 142530 and 86345.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Hash Table Performance}
+The hash table performance are the same for bot sequential and parallel versione of code.
+\begin{itemize}
+    \item 100KB \\
+        The maximum chain length is 2 node and the average is 1. The load factor (i.e., elements/buckets) has a value of 0,0017 and the fill factor (i.e., busy/total) of 0,0017.
+    \item 100MB \\
+        The maximum chain length is 11 node and the average is 1,69. The load factor (i.e., elements/buckets) has a value of 1,1563 and the fill factor (i.e., busy/total) of 0,6853.
+    \item 500MB \\
+        The maximum chain length is 20 node and the average is 4,76. The load factor (i.e., elements/buckets) has a value of 4,7155 and the fill factor (i.e., busy/total) of 0,991.
+    \item 1GB \\
+        The maximum chain length is 23 node and the average is 6,30. The load factor (i.e., elements/buckets) has a value of 6,2910 and the fill factor (i.e., busy/total) of 0,9981.
+    \item 1.5GB \\
+        The maximum chain length is 35 node and the average is 12,22. The load factor (i.e., elements/buckets) has a value of 12,2241 and the fill factor (i.e., busy/total) of 1,0000.
+    \item 2GB \\
+        The maximum chain length is 40 node and the average is 15,54. The load factor (i.e., elements/buckets) has a value of 15,5416 and the fill factor (i.e., busy/total) of 1,0000.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Time Statistics}
+The time statiscs are obvusually different bwtween sequential and parallel version of code. We analyze aggregate for the dimension fo the input file.
+
+\subsection{100KB size}
+As we can see above, the total execution time is bigger in the parallel version. For small dataset this is due to the overhead of the fork-join oepration.
+
+It isn't usefull calculate the speed-up. This test is only usefull to observe that with few data the parallel approach doesn't gain the same advantage of its exection on a big corpus.
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 0,0200 seconds.
+        \item Populating hash table time: 0,0099 seconds.
+        \item Free the hash table is irrelevant (i.e., the system print 0,0000 with 4 decimal places) in this case.
+        \item Statistics extraction: 0,0101 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 0,0568 seconds.
+        \item Populating hash table time: 0,0483 seconds.
+        \item Free the hash table is irrelevant (i.e., the system print 0,0000 with 4 decimal places) in this case.
+        \item Statistics extraction: 0,0084 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{100MB size}
+With more data we can observe the efficently of the fork-join approch. We have obtain a speed-up of $sup=\tfrac{t_{seq}}{t_{par}}=4,97$.
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 3,3305 seconds.
+        \item Populating hash table time: 3,0567 seconds.
+        \item Free the hash table is irrelevant (i.e., the system print 0,0000 with 4 decimal places) in this case.
+        \item Statistics extraction: 0,2723 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 0,6696 seconds.
+        \item Populating hash table time: 0,5554 seconds.
+        \item Free the hash table is irrelevant (i.e., the system print 0,0000 with 4 decimal places) in this case.
+        \item Statistics extraction: 0,1125 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{500MB size}
+Before arriving to the last experiments, we make same experiments with a slow increment of input dimension.
+
+We have obtain a speed-up of $sup=\tfrac{t_{seq}}{t_{par}}=7,11$.
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 31,3847 seconds.
+        \item Populating hash table time: 29.7151 seconds.
+        \item Free the hash table is: 0,0060 seconds.
+        \item Statistics extraction: 1,6621 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 4,4133 seconds.
+        \item Populating hash table time: 2,6503 seconds.
+        \item Free the hash table: 0,0150.
+        \item Statistics extraction: 1,7434 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{1GB size}
+We have obtain a speed-up of $sup=\tfrac{t_{seq}}{t_{par}}=8,09$.
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 53,7854 seconds.
+        \item Populating hash table time: 51,0290 seconds.
+        \item Free the hash table is: 0,0118 seconds.
+        \item Statistics extraction: 2,7377 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 6,6462 seconds.
+        \item Populating hash table time: 3,8822 seconds.
+        \item Free the hash table: 0,0254.
+        \item Statistics extraction: 2,7364 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{1.5GB size}
+We have obtain a speed-up of $sup=\tfrac{t_{seq}}{t_{par}}=10,30$.
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 207,6583 seconds.
+        \item Populating hash table time: 199,0169 seconds.
+        \item Free the hash table is: 0,0197 seconds.
+        \item Statistics extraction: 8,6142 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 20,1456 seconds.
+        \item Populating hash table time: 11,7647 seconds.
+        \item Free the hash table is: 0,0507 seconds.
+        \item Statistics extraction: 8,3235 seconds.
+    \end{itemize}
+\end{itemize}
+
+\subsection{2GB size}
+This is absulutely the most insteresting scenario because we can see that the parallel version is slower than the sequential one.
+
+With a low dimention of the input file all, is possibile to store all (or the main part) the information in the cache L3. With a huge dataset we move from and to the main memory and this began a Memory-Bound task and with all core working we have a memory bandwidth saturation. We can see this from the profiling: the 66.71\% of the time is spent in \texttt{populate\_hashtable} function, and 27.68\% in \texttt{libsystem\_platform}, i.e. in \texttt{malloc} function.
+
+\myskip
+
+\begin{itemize}
+    \item Sequential
+    \begin{itemize}
+        \item Total execution time: 346,5373 seconds, i.e. 5 minutes and 46 seconds.
+        \item Populating hash table time: 333,3192 seocnds, i.e. 5 minutes and 30 seconds.
+        \item Free the hash table: 0,0367 seconds.
+        \item Statistics extraction: 13,1746 seconds.
+    \end{itemize}
+    \item Parallel
+    \begin{itemize}
+        \item Total execution time: 357,9196 seconds, i.e. 5 minutes and 57 seconds.
+        \item Populating hash table time: 335,2379 seconds, i.e. 5 minutes and 35 seconds.
+        \item Free the hash table: 0,1226 seconds.
+        \item Statistics extraction: 22,5551 seconds.
+    \end{itemize}
+\end{itemize}

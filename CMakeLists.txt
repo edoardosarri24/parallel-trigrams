@@ -76,7 +76,7 @@ endif()
 
 # hyperparameters.
 set(N_GRAM_SIZE 3 CACHE STRING "Size of the n-gram")
-set(TOP_K 10 CACHE STRING "Number of top n-grams to display")
+set(TOP_K 3 CACHE STRING "Number of top n-grams to display")
 
 # subprojects
 add_subdirectory(sequential)
